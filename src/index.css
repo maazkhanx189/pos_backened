@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #f3f4f6;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+img {
+  max-width: 100%;
+}
+
+input,
+select,
+button {
+  font: inherit;
+}
+
+table tr:hover {
+  background-color: #f3f4f6;
+}
+
+@media print {
+  button {
+    display: none;
+  }
+
+  body {
+    background: white;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  #invoice,
+  #invoice * {
+    visibility: visible;
+  }
+
+  #invoice {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  @page {
+    margin: 0;
+    size: 80mm auto;
+  }
+
+  .print-area {
+    font-size: 12px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  body {
+    font-size: 15px;
+  }
+}
