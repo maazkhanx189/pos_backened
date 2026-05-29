@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Customers from "./pages/Customers";
+import CustomerLedger from "./pages/CustomerLedger";
 import POS from "./pages/POS";
 import Sales from "./pages/Sales";
 import Reports from "./pages/Reports";
@@ -56,6 +57,15 @@ function App() {
           element={
             <ProtectedRoute>
               <Customers />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/customers/ledger/:id"
+          element={
+            <ProtectedRoute>
+              <CustomerLedger />
             </ProtectedRoute>
           }
         />

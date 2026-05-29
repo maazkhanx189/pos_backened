@@ -1,7 +1,17 @@
 import axios from "axios";
 
+const resolveBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+
+  if (envUrl) {
+    return envUrl;
+  }
+
+  return "https://mern-pos-system-production.up.railway.app/api";
+};
+
 const API = axios.create({
-  baseURL: "https://mern-pos-system-production.up.railway.app/api",
+  baseURL: resolveBaseUrl(),
   timeout: 10000,
 });
 

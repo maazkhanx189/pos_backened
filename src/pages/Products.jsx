@@ -17,14 +17,14 @@ function Products() {
     stock: "",
     lowStockAlert: "5"
   });
-
+  const [editingId, setEditingId] = useState(null);
   const [image, setImage] = useState(null);
 
   const { toast, showToast, ToastContainer } = useToast();
 
   const user = JSON.parse(localStorage.getItem("user")) || {};
 
-  const baseURL = API.defaults.baseURL?.replace("/api", "") || "http://localhost:8000";
+  const baseURL = API.defaults.baseURL?.replace("/api", "") || window.location.origin;
 
   const fetchProducts = async (signal) => {
     try {
@@ -60,7 +60,20 @@ function Products() {
     };
   }, [search]);
 
-  // INPUT HANDLER
+  const resetForm = () => {
+    setForm({
+      name: "",
+      barcode: "",
+      category: "",
+      purchasePrice: "",
+      salePrice: "",
+      stock: "",
+      lowStockAlert: "5"
+    });
+    setImage(null);
+    setEditingId(null);
+  };
+
   const handleChange = (e) => {
     setForm((prev) => ({
       ...prev,
@@ -68,7 +81,21 @@ function Products() {
     }));
   };
 
-  // ADD PRODUCT (WITH IMAGE UPLOAD)
+  const handleEdit = (product) => {
+    setEditingId(product._id);
+    setForm({
+      name: product.name || "",
+      barcode: product.barcode || "",
+      category: product.category || "",
+      purchasePrice: product.purchasePrice || "",
+      salePrice: product.salePrice || "",
+      stock: product.stock || "",
+      lowStockAlert: product.lowStockAlert || "5"
+    });
+    setImage(null);
+  };
+
+  // ADD OR UPDATE PRODUCT (WITH IMAGE UPLOAD)
   const addProduct = async (e) => {
     e.preventDefault();
 
@@ -91,26 +118,26 @@ function Products() {
         formData.append("image", image);
       }
 
-      await API.post("/products", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data"
-        }
-      });
+      if (editingId) {
+        await API.put(`/products/${editingId}`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        });
+        showToast("Product updated successfully", "success");
+      } else {
+        await API.post("/products", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data"
+          }
+        });
+        showToast("Product added successfully", "success");
+      }
 
-      setForm({
-        name: "",
-        barcode: "",
-        category: "",
-        purchasePrice: "",
-        salePrice: "",
-        stock: "",
-        lowStockAlert: "5"
-      });
-      setImage(null);
-      showToast("Product added successfully", "success");
+      resetForm();
       fetchProducts();
     } catch (err) {
-      showToast(err.response?.data?.message || "Failed to add product", "error");
+      showToast(err.response?.data?.message || (editingId ? "Failed to update product" : "Failed to add product"), "error");
     }
   };
 
@@ -223,9 +250,20 @@ function Products() {
           </div>
         )}
 
-        <button type="submit" className="bg-black p-2 text-white transition-colors hover:bg-gray-800 sm:col-span-2 xl:col-span-3">
-          Add Product
-        </button>
+        <div className="sm:col-span-2 xl:col-span-3 flex flex-col gap-2">
+          <button type="submit" className="bg-black p-2 text-white transition-colors hover:bg-gray-800">
+            {editingId ? "Update Product" : "Add Product"}
+          </button>
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="border border-gray-300 p-2 text-black transition-colors hover:bg-gray-100"
+            >
+              Cancel Edit
+            </button>
+          )}
+        </div>
       </form>
 
       {/* DATA VIEW TABLE */}
@@ -235,6 +273,7 @@ function Products() {
             <tr className="bg-gray-200 text-gray-700 text-sm">
               <th className="p-3">Image</th>
               <th>Name</th>
+              <th>Barcode</th>
               <th>Category</th>
               <th>Stock</th>
               <th>Purchase</th>
@@ -262,6 +301,7 @@ function Products() {
                     </td>
 
                     <td className="font-medium">{p.name}</td>
+                    <td className="text-sm text-gray-600">{p.barcode || "—"}</td>
                     <td>{p.category || "—"}</td>
 
                     {/* STOCK WITH DYNAMIC STYLING ALERT */}
@@ -280,14 +320,22 @@ function Products() {
                     <td>${p.salePrice || 0}</td>
 
                     {/* ACTIONS */}
-                    <td className="p-2">
+                    <td className="p-2 space-x-1">
                       {user?.role === "admin" ? (
-                        <button
-                          onClick={() => deleteProduct(p._id)}
-                          className="rounded bg-red-500 px-2 py-1 text-xs text-white transition-colors hover:bg-red-600"
-                        >
-                          Delete
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleEdit(p)}
+                            className="rounded bg-blue-500 px-2 py-1 text-xs text-white transition-colors hover:bg-blue-600"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => deleteProduct(p._id)}
+                            className="rounded bg-red-500 px-2 py-1 text-xs text-white transition-colors hover:bg-red-600"
+                          >
+                            Delete
+                          </button>
+                        </>
                       ) : (
                         <span className="text-xs italic text-gray-400">Restricted</span>
                       )}

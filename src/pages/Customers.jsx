@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import MainLayout from "../layouts/MainLayout";
+import { Link } from "react-router-dom";
 
 function Customers() {
   const [customers, setCustomers] = useState([]);
@@ -15,58 +16,38 @@ function Customers() {
     previousBalance: 0,
   });
 
+  // FORMAT
   const formatCurrency = (value) =>
-    `${Number(value || 0).toFixed(2)}`;
+    Number(value || 0).toFixed(2);
 
+  // TOAST
   const showToast = (message, type = "info") => {
     setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchCustomers = async (signal) => {
+  // FETCH
+  const fetchCustomers = async () => {
     try {
       setLoading(true);
-      const { data } = await API.get(`/customers?search=${encodeURIComponent(search.trim())}`, {
-        signal,
-      });
 
-      if (!signal?.aborted) {
-        setCustomers(Array.isArray(data) ? data : []);
-      }
+      const { data } = await API.get(
+        `/customers?search=${search}`
+      );
+
+      setCustomers(Array.isArray(data) ? data : []);
     } catch (err) {
-      if (err.name !== "CanceledError" && err.code !== "ERR_CANCELED") {
-        console.error("Error fetching customers:", err);
-        showToast("Failed to load customers", "error");
-      }
+      showToast("Failed to load customers", "error");
     } finally {
-      if (!signal?.aborted) {
-        setLoading(false);
-      }
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    const controller = new AbortController();
-    const timer = setTimeout(() => {
-      fetchCustomers(controller.signal);
-    }, 300);
-
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
+    fetchCustomers();
   }, [search]);
 
-  useEffect(() => {
-    if (!toast) {
-      return undefined;
-    }
-
-    const timer = setTimeout(() => setToast(null), 3000);
-
-    return () => clearTimeout(timer);
-  }, [toast]);
-
-  // INPUT CHANGE
+  // INPUT
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -74,7 +55,7 @@ function Customers() {
     });
   };
 
-  // ADD CUSTOMER
+  // ADD
   const addCustomer = async (e) => {
     e.preventDefault();
 
@@ -91,18 +72,23 @@ function Customers() {
       showToast("Customer added successfully", "success");
       fetchCustomers();
     } catch (err) {
-      showToast(err.response?.data?.message || "Failed to add customer", "error");
+      showToast(
+        err.response?.data?.message || "Error",
+        "error"
+      );
     }
   };
 
-  // DELETE CUSTOMER
+  // DELETE
   const deleteCustomer = async (id) => {
+    if (!window.confirm("Delete customer?")) return;
+
     try {
       await API.delete(`/customers/${id}`);
-      showToast("Customer deleted successfully", "success");
+      showToast("Deleted successfully", "success");
       fetchCustomers();
     } catch (err) {
-      showToast(err.response?.data?.message || "Failed to delete customer", "error");
+      showToast("Delete failed", "error");
     }
   };
 
@@ -112,14 +98,13 @@ function Customers() {
         Customers
       </h1>
 
+      {/* TOAST */}
       {toast && (
         <div
-          className={`fixed right-4 top-4 z-50 max-w-sm rounded border px-4 py-3 shadow-lg ${
+          className={`fixed top-4 right-4 p-3 rounded shadow ${
             toast.type === "success"
-              ? "border-green-200 bg-green-50 text-green-800"
-              : toast.type === "error"
-                ? "border-red-200 bg-red-50 text-red-800"
-                : "border-blue-200 bg-blue-50 text-blue-800"
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
           }`}
         >
           {toast.message}
@@ -127,26 +112,27 @@ function Customers() {
       )}
 
       {/* SEARCH */}
-      <div className="mb-4">
-        <input
-          type="text"
-          placeholder="Search customer..."
-          className="w-full border p-2"
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {loading && (
-          <p className="mt-2 text-sm text-gray-500">Loading customers...</p>
-        )}
-      </div>
+      <input
+        className="border p-2 w-full mb-4"
+        placeholder="Search customer..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
-      {/* ADD CUSTOMER FORM */}
+      {loading && (
+        <p className="text-sm text-gray-500 mb-2">
+          Loading...
+        </p>
+      )}
+
+      {/* FORM */}
       <form
         onSubmit={addCustomer}
-        className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2"
+        className="grid grid-cols-2 gap-3 mb-6"
       >
         <input
           name="name"
-          placeholder="Customer Name"
+          placeholder="Name"
           className="border p-2"
           value={form.name}
           onChange={handleChange}
@@ -163,7 +149,7 @@ function Customers() {
         <input
           name="address"
           placeholder="Address"
-          className="border p-2 sm:col-span-2"
+          className="border p-2 col-span-2"
           value={form.address}
           onChange={handleChange}
         />
@@ -176,57 +162,62 @@ function Customers() {
           onChange={handleChange}
         />
 
-        <button className="bg-black p-2 text-white sm:col-span-2">
+        <button className="bg-black text-white p-2 col-span-2">
           Add Customer
         </button>
       </form>
 
       {/* TABLE */}
-      <div className="overflow-x-auto">
-        <table className="min-w-[700px] w-full bg-white shadow">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="p-2">Name</th>
-              <th>Phone</th>
-              <th>Address</th>
-              <th>Outstanding Balance</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((c) => (
-              <tr
-                key={c._id}
-                className="text-center border-t"
+      <table className="w-full bg-white shadow">
+        <thead>
+          <tr className="bg-gray-200">
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>Balance</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {customers.map((c) => (
+            <tr
+              key={c._id}
+              className="text-center border-t"
+            >
+              <td>{c.name}</td>
+              <td>{c.phone}</td>
+              <td>{c.address}</td>
+
+              <td
+                className={
+                  c.currentBalance > 0
+                    ? "text-red-600 font-bold"
+                    : "text-green-600"
+                }
               >
-                <td className="p-2">{c.name}</td>
-                <td>{c.phone}</td>
-                <td>{c.address}</td>
+                {formatCurrency(c.currentBalance)}
+              </td>
 
-                {/* CREDIT HIGHLIGHT */}
-                <td
-                  className={
-                    c.currentBalance > 0
-                      ? "font-bold text-red-600"
-                      : "text-green-600"
-                  }
+              <td className="flex gap-2 justify-center">
+                <Link
+                  to={`/customers/ledger/${c._id}`}
+                  className="bg-blue-600 text-white px-3 py-1 text-sm"
                 >
-                  {formatCurrency(c.currentBalance)}
-                </td>
+                  Ledger
+                </Link>
 
-                <td>
-                  <button
-                    onClick={() => deleteCustomer(c._id)}
-                    className="bg-red-500 px-3 py-1 text-white"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                <button
+                  onClick={() => deleteCustomer(c._id)}
+                  className="bg-red-500 text-white px-3 py-1 text-sm"
+                >
+                  Delete
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </MainLayout>
   );
 }

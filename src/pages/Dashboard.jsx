@@ -24,7 +24,7 @@ function Dashboard() {
 
   const baseURL =
     API.defaults.baseURL?.replace("/api", "") ||
-    "http://localhost:8000";
+    window.location.origin;
 
   const fetchStats = async () => {
     try {
