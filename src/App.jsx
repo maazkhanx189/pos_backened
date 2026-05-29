@@ -62,7 +62,7 @@ function App() {
         />
 
         <Route
-          path="/customers/ledger/:id"
+          path="/customers/:id/ledger"
           element={
             <ProtectedRoute>
               <CustomerLedger />
@@ -105,9 +105,13 @@ function App() {
           }
         />
         <Route
-  path="/sales/edit/:id"
-  element={<EditSale />}
-/>
+          path="/sales/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditSale />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
 
     </BrowserRouter>

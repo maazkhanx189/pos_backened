@@ -201,7 +201,7 @@ function Customers() {
 
               <td className="flex gap-2 justify-center">
                 <Link
-                  to={`/customers/ledger/${c._id}`}
+                  to={`/customers/${c._id}/ledger`}
                   className="bg-blue-600 text-white px-3 py-1 text-sm"
                 >
                   Ledger

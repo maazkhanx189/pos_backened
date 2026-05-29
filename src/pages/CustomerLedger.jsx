@@ -11,18 +11,37 @@ function CustomerLedger() {
   const [loading, setLoading] = useState(false);
 
   const fetchLedger = async () => {
+    const endpoints = [
+      `/customers/${id}/ledger`,
+      `/customers/ledger/${id}`,
+    ];
+
     try {
       setLoading(true);
 
-      const res = await API.get(
-        `/customers/${id}/ledger`
-      );
+      let res = null;
+
+      // Try primary (server may expose /customers/ledger/:id)
+      for (const ep of endpoints) {
+        try {
+          res = await API.get(ep);
+          if (res) break;
+        } catch (e) {
+          // continue to next endpoint on 404, else rethrow
+          if (e.response?.status && e.response.status !== 404) throw e;
+        }
+      }
+
+      if (!res) {
+        throw new Error("Unable to load customer ledger");
+      }
 
       setLedger(res.data);
       setError("");
     } catch (err) {
       setError(
         err.response?.data?.message ||
+          err.message ||
           "Unable to load customer ledger"
       );
       setLedger(null);
